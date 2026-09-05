@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cleanconnect-api
+    env: python
+    buildCommand: cd api && pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: cd api && gunicorn config.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_l0AvnKfaqD1I@ep-twilight-sun-ay6cw76p-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: SECRET_KEY
+        generateValue: true
