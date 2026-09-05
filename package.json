@@ -1,0 +1,11 @@
+{
+  "name": "UISAC",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "devDependencies": {
+    "nx": "23.2.0"
+  }
+}
