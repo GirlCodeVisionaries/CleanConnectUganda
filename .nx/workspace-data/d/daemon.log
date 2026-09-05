@@ -1149,3 +1149,4 @@ Deleted:
 [NX v23.2.0 Daemon Server] - 2026-09-05T16:42:31.087Z - Done responding to the client handleRunPostTasksExecution
 [NX v23.2.0 Daemon Server] - 2026-09-05T16:42:31.087Z - Handled json message POST_TASKS_EXECUTION. Handling time: 2. Response time: 2.
 [NX v23.2.0 Daemon Client] - 2026-09-05T16:42:31.086Z - [Messenger] Received message, length: 4
+[NX v23.2.0 Daemon Server] - 2026-09-05T16:42:31.103Z - Closed a connection. Number of open connections: 0
