@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI, bookingsAPI, paymentsAPI } from '../services/api';
-import StarRating from '../components/StarRating';
 import {
-  Search, MapPin, Clock, Shield, Zap, Loader2, CheckCircle, Star,
+  MapPin, Clock, Shield, Loader2, CheckCircle, Star,
   ArrowRight, ArrowLeft, Calendar, CreditCard, Sparkles, Home, Briefcase,
-  Truck, Package, Maximize, Droplet, ChevronRight, Home as HomeIcon
+  Truck, Package, Maximize, Droplet, Tag, Award, Bot
 } from 'lucide-react';
 
 const SERVICE_OPTIONS = [
@@ -37,10 +36,8 @@ export default function Order() {
   const [location, setLocation] = useState('');
   const [numRooms, setNumRooms] = useState(2);
   const [numBathrooms, setNumBathrooms] = useState(1);
-  const [urgency, setUrgency] = useState('standard');
 
-  const [quotes, setQuotes] = useState(null);
-  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [aiResult, setAiResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -54,9 +51,9 @@ export default function Order() {
   const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
   const [orderLoading, setOrderLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [bookingRef, setBookingRef] = useState('');
+  const [bookingData, setBookingData] = useState(null);
 
-  const handleGetQuotes = async () => {
+  const handleGetPrice = async () => {
     if (!serviceType) { setError('Please select a service'); return; }
     if (!location) { setError('Please select your location'); return; }
     if (!user) { navigate('/login?redirect=/order'); return; }
@@ -64,26 +61,19 @@ export default function Order() {
     setLoading(true);
     setError('');
     try {
-      const res = await aiAPI.quote({
+      const res = await aiAPI.assign({
         location,
         service_type: serviceType,
         num_rooms: numRooms,
         num_bathrooms: numBathrooms,
-        urgency,
       });
-      setQuotes(res.data);
+      setAiResult(res.data);
       setStep(2);
     } catch (err) {
-      setError('Failed to get quotes. Please try again.');
+      setError('Failed to get pricing. Please try again.');
     }
     setLoading(false);
   };
-
-  const handleSelectPartner = (quote) => {
-    setSelectedQuote(quote);
-    setStep(3);
-  };
-
   const handlePlaceOrder = async () => {
     if (!orderForm.address || !orderForm.scheduled_date) {
       setError('Please fill in your address and preferred date');
@@ -94,18 +84,22 @@ export default function Order() {
 
     try {
       const bookingRes = await bookingsAPI.create({
-        partner: selectedQuote.partner_id,
+        partner: aiResult.partner_id,
         service: null,
         service_category: null,
+        customer_gender: user?.gender || '',
         address: orderForm.address,
         num_rooms: numRooms,
         num_bathrooms: numBathrooms,
         special_requests: orderForm.special_requests,
         scheduled_date: orderForm.scheduled_date,
         scheduled_time: orderForm.scheduled_time,
-        duration_minutes: selectedQuote.estimated_duration || 120,
-        total_price: selectedQuote.price,
-        ai_quote_data: { serviceType, location, numRooms, numBathrooms, urgency, quote: selectedQuote },
+        duration_minutes: aiResult.estimated_duration || 120,
+        base_price: aiResult.platform_price,
+        discount_percent: aiResult.discount.discount_percent,
+        discount_amount: aiResult.discount.discount_amount,
+        total_price: aiResult.final_price,
+        ai_match_data: aiResult,
       });
 
       await paymentsAPI.create({
@@ -114,7 +108,7 @@ export default function Order() {
         phone_number: phoneNumber,
       });
 
-      setBookingRef(bookingRes.data.booking_ref);
+      setBookingData(bookingRes.data);
       setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Order failed. Please try again.');
@@ -124,18 +118,22 @@ export default function Order() {
 
   const serviceLabel = SERVICE_OPTIONS.find(s => s.value === serviceType)?.label || '';
 
-  if (success) {
+  if (success && bookingData) {
     return (
       <div className="booking-success">
         <div className="success-card">
           <CheckCircle size={64} className="text-accent" />
           <h1>Order Confirmed!</h1>
-          <p className="booking-ref">Reference: <strong>{bookingRef}</strong></p>
+          <p className="booking-ref">Reference: <strong>{bookingData.booking_ref}</strong></p>
           <div className="success-details">
-            <p><strong>{selectedQuote.partner_name}</strong></p>
+            <p><strong>{bookingData.partner_name}</strong></p>
+            <p className="text-muted" style={{ fontSize: 13 }}>Your cleaner has been assigned by our AI</p>
             <p><Calendar size={14} /> {orderForm.scheduled_date} at {orderForm.scheduled_time}</p>
             <p><MapPin size={14} /> {orderForm.address}</p>
-            <p><CreditCard size={14} /> {selectedQuote.price_display} paid via {paymentMethod === 'mtn_momo' ? 'MTN MoMo' : paymentMethod === 'airtel_money' ? 'Airtel Money' : 'Card'}</p>
+            <p><CreditCard size={14} /> UGX {Number(bookingData.total_price).toLocaleString()} paid via {paymentMethod === 'mtn_momo' ? 'MTN MoMo' : paymentMethod === 'airtel_money' ? 'Airtel Money' : 'Card'}</p>
+            {Number(bookingData.discount_amount) > 0 && (
+              <p><Tag size={14} /> You saved UGX {Number(bookingData.discount_amount).toLocaleString()} (discount applied)</p>
+            )}
           </div>
           <div className="success-guarantee">
             <Shield size={20} />
@@ -155,17 +153,17 @@ export default function Order() {
       <div className="order-steps">
         <div className={`order-step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'done' : ''}`}>
           <div className="step-circle">{step > 1 ? <CheckCircle size={18} /> : '1'}</div>
-          <span>Select Service</span>
+          <span>Tell Us What You Need</span>
         </div>
         <div className="step-line" />
         <div className={`order-step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'done' : ''}`}>
           <div className="step-circle">{step > 2 ? <CheckCircle size={18} /> : '2'}</div>
-          <span>Compare & Choose</span>
+          <span>AI Finds Your Cleaner</span>
         </div>
         <div className="step-line" />
         <div className={`order-step ${step >= 3 ? 'active' : ''}`}>
           <div className="step-circle">3</div>
-          <span>Confirm Order</span>
+          <span>Confirm & Pay</span>
         </div>
       </div>
 
@@ -175,7 +173,7 @@ export default function Order() {
         <div className="order-step-content">
           <div className="order-step-header">
             <h1>What do you need cleaned?</h1>
-            <p>Choose a service and we'll find the best verified partners near you</p>
+            <p>Choose a service, and our AI will find the best cleaner for you — you don't need to pick one yourself</p>
           </div>
 
           <div className="service-grid">
@@ -227,113 +225,137 @@ export default function Order() {
                   <button type="button" onClick={() => setNumBathrooms(Math.min(10, numBathrooms + 1))}>+</button>
                 </div>
               </div>
-              <div className="form-group">
-                <label><Clock size={14} /> When do you need it?</label>
-                <select value={urgency} onChange={(e) => setUrgency(e.target.value)}>
-                  <option value="standard">Standard (today or tomorrow)</option>
-                  <option value="scheduled">Schedule ahead (save 10%)</option>
-                  <option value="urgent">Urgent (ASAP, +35%)</option>
-                </select>
-              </div>
             </div>
           </div>
 
           <div className="order-step-actions">
             <button
               className="btn btn-primary btn-lg"
-              onClick={handleGetQuotes}
+              onClick={handleGetPrice}
               disabled={loading || !serviceType || !location}
             >
               {loading
-                ? <><Loader2 size={18} className="spin" /> AI is finding partners near you...</>
-                : <><Zap size={18} /> Find Partners Near Me <ArrowRight size={18} /></>
+                ? <><Loader2 size={18} className="spin" /> AI is finding the best cleaner...</>
+                : <><Bot size={18} /> Get My Price <ArrowRight size={18} /></>
               }
             </button>
           </div>
         </div>
       )}
 
-      {step === 2 && quotes && (
+      {step === 2 && aiResult && (
         <div className="order-step-content">
           <div className="order-step-header">
-            <h1>We found {quotes.quote_count} verified partner{quotes.quote_count !== 1 ? 's' : ''} near you</h1>
-            <p>
-              AI-matched for <strong>{serviceLabel}</strong> in <strong>{location}</strong>
-              {' '}({numRooms} bed{numBathrooms > 0 ? `, ${numBathrooms} bath` : ''})
-            </p>
+            <h1>Our AI found your perfect cleaner</h1>
+            <p>We scanned {aiResult.partners_considered} verified partners and picked the best one for you</p>
           </div>
 
-          <div className="quotes-ai-bar">
-            <Sparkles size={18} />
-            <div>
-              <strong>AI Predicted Fair Price: {quotes.predicted_price_display}</strong>
-              <span>Based on property size, location, and current demand</span>
+          <div className="ai-match-card">
+            <div className="ai-match-header">
+              <Bot size={32} className="ai-match-icon" />
+              <div>
+                <h3>AI Match Complete</h3>
+                <p>{aiResult.ai_match_reason}</p>
+              </div>
             </div>
-            {quotes.demand_level > 1 && <span className="demand-badge">High demand area</span>}
-          </div>
 
-          <div className="quotes-list">
-            {quotes.quotes.map((q, idx) => (
-              <div key={q.partner_id} className={`quote-card ${q.is_featured ? 'featured' : ''} ${idx === 0 ? 'best-match' : ''}`}>
-                {idx === 0 && <div className="best-match-badge"><Star size={14} /> AI Best Match</div>}
-                {q.is_featured && <div className="featured-badge">Featured</div>}
-
-                <div className="quote-info">
-                  <h3>{q.partner_name}</h3>
-                  <StarRating rating={q.rating} />
-                  <span className="quote-bookings">{q.total_bookings} jobs completed</span>
+            <div className="ai-match-stats">
+              <div className="ai-stat">
+                <Award size={20} />
+                <div>
+                  <strong>{aiResult.partner_rating_display}</strong>
+                  <span>Partner rating</span>
                 </div>
-
-                <div className="quote-details">
-                  <div className="quote-price">{q.price_display}</div>
-                  {idx === 0 && quotes.predicted_price && q.price < quotes.predicted_price && (
-                    <span className="quote-savings">
-                      Save UGX {(quotes.predicted_price - q.price).toLocaleString()}
-                    </span>
-                  )}
-                  <div className="quote-meta">
-                    <span><Clock size={14} /> ~{q.estimated_duration} min</span>
-                    {q.distance_km !== null && (
-                      <span><MapPin size={14} /> {q.distance_km} km away</span>
-                    )}
-                    <span><CheckCircle size={14} /> {q.next_available.display}</span>
+              </div>
+              <div className="ai-stat">
+                <Star size={20} />
+                <div>
+                  <strong>{aiResult.ai_match_score}</strong>
+                  <span>AI match score</span>
+                </div>
+              </div>
+              <div className="ai-stat">
+                <Clock size={20} />
+                <div>
+                  <strong>~{aiResult.estimated_duration} min</strong>
+                  <span>Estimated time</span>
+                </div>
+              </div>
+              {aiResult.partner_distance_km !== null && (
+                <div className="ai-stat">
+                  <MapPin size={20} />
+                  <div>
+                    <strong>{aiResult.partner_distance_km} km</strong>
+                    <span>Away from you</span>
                   </div>
                 </div>
+              )}
+            </div>
 
-                <button className="btn btn-primary" onClick={() => handleSelectPartner(q)}>
-                  Select <ChevronRight size={16} />
-                </button>
-              </div>
-            ))}
+            <div className="ai-match-next">
+              <CheckCircle size={16} />
+              <span>Next available: <strong>{aiResult.next_available.display}</strong></span>
+            </div>
           </div>
 
-          <div className="assurance-bar">
-            <Shield size={20} />
-            <div>
-              <strong>CleanConnect Assurance Guarantee</strong>
-              <p>Re-clean, refund, or replacement partner if the job falls short</p>
+          <div className="price-card">
+            <div className="price-card-header">
+              <h2>Your Price</h2>
+              <span className="price-service">{serviceLabel} — {location}</span>
+            </div>
+
+            <div className="price-breakdown">
+              <div className="price-row">
+                <span>Base price ({numRooms} bed, {numBathrooms} bath)</span>
+                <span>{aiResult.platform_price_display}</span>
+              </div>
+              {aiResult.discount.discount_percent > 0 && (
+                <div className="price-row discount">
+                  <span><Tag size={14} /> Discount ({aiResult.discount.discount_percent}%)</span>
+                  <span>- UGX {aiResult.discount.discount_amount.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="price-row total">
+                <span>You pay</span>
+                <span>{aiResult.final_price_display}</span>
+              </div>
+            </div>
+
+            {aiResult.discount.discount_percent > 0 && (
+              <div className="discount-badge-row">
+                <Tag size={16} />
+                <span>You're saving UGX {aiResult.discount.discount_amount.toLocaleString()}!</span>
+              </div>
+            )}
+
+            <div className="price-assurance">
+              <Shield size={16} />
+              <span>Assurance Guarantee included — re-clean, refund, or replacement</span>
             </div>
           </div>
 
           <div className="order-step-actions two-btn">
-            <button className="btn btn-outline" onClick={() => { setStep(1); setQuotes(null); }}>
-              <ArrowLeft size={16} /> Change Service
+            <button className="btn btn-outline" onClick={() => { setStep(1); setAiResult(null); }}>
+              <ArrowLeft size={16} /> Change Details
+            </button>
+            <button className="btn btn-primary btn-lg" onClick={() => setStep(3)}>
+              Proceed to Book <ArrowRight size={18} />
             </button>
           </div>
         </div>
       )}
 
-      {step === 3 && selectedQuote && (
+      {step === 3 && aiResult && (
         <div className="order-step-content">
           <div className="order-step-header">
             <h1>Confirm Your Order</h1>
-            <p>Review details and place your order with <strong>{selectedQuote.partner_name}</strong></p>
+            <p>Fill in the details below and your cleaner will be ready to go</p>
           </div>
 
           <div className="booking-grid">
             <div className="booking-form-section">
               <div className="form-card">
-                <h2>Order Details</h2>
+                <h2>Service Details</h2>
                 <div className="order-summary-mini">
                   <div className="order-summary-row">
                     <span>Service</span>
@@ -424,9 +446,9 @@ export default function Order() {
               <div className="summary-card">
                 <h2>Order Summary</h2>
                 <div className="summary-partner">
-                  <h3>{selectedQuote.partner_name}</h3>
+                  <h3>CleanConnect Assigned Cleaner</h3>
                   <div className="summary-rating">
-                    {'★'.repeat(Math.round(selectedQuote.rating))} {selectedQuote.rating_display}
+                    <Bot size={14} /> AI-matched — revealed after booking
                   </div>
                 </div>
                 <div className="summary-details">
@@ -444,17 +466,23 @@ export default function Order() {
                   </div>
                   <div className="summary-row">
                     <span>Duration</span>
-                    <span>~{selectedQuote.estimated_duration} min</span>
+                    <span>~{aiResult.estimated_duration} min</span>
                   </div>
                   <div className="summary-row">
                     <span>Available</span>
-                    <span>{selectedQuote.next_available?.display}</span>
+                    <span>{aiResult.next_available?.display}</span>
                   </div>
+                  {aiResult.discount.discount_percent > 0 && (
+                    <div className="summary-row" style={{ color: 'var(--success)' }}>
+                      <span>Discount ({aiResult.discount.discount_percent}%)</span>
+                      <span>- UGX {aiResult.discount.discount_amount.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="summary-total">
                   <div className="summary-row total">
                     <span>Total</span>
-                    <span>{selectedQuote.price_display}</span>
+                    <span>{aiResult.final_price_display}</span>
                   </div>
                 </div>
                 <div className="summary-guarantee">
@@ -473,7 +501,7 @@ export default function Order() {
 
           <div className="order-step-actions" style={{ marginTop: 24 }}>
             <button className="btn btn-outline" onClick={() => setStep(2)}>
-              <ArrowLeft size={16} /> Back to Partners
+              <ArrowLeft size={16} /> Back
             </button>
           </div>
         </div>

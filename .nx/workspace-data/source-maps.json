@@ -1,0 +1,144 @@
+{
+  "frontend": {
+    "root": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "name": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "tags": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "tags.npm:private": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.0": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.1": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.2": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageName": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.packageVersion": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.js.isInPackageManagerWorkspaces": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.executor": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.metadata": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.options.script": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.options": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.metadata.scriptContent": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.dev.metadata.runCommand": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.executor": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.metadata": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.options.script": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.options": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.metadata.scriptContent": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.build.metadata.runCommand": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.executor": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.metadata": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.options.script": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.options": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.metadata.scriptContent": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.preview.metadata.runCommand": [
+      "frontend/package.json",
+      "nx/core/package-json"
+    ]
+  }
+}

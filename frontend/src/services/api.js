@@ -52,6 +52,7 @@ export const reviewsAPI = {
 export const aiAPI = {
   quote: (data) => api.post('/ai/quote/', data),
   match: (data) => api.post('/ai/match/', data),
+  assign: (data) => api.post('/ai/assign/', data),
   forecast: (params) => api.get('/ai/forecast/', { params }),
   chat: (data) => api.post('/ai/chat/', data),
   trustScore: (partnerId) => api.get(`/ai/trust-score/${partnerId}/`),

@@ -10,7 +10,13 @@ class User(AbstractUser):
         ('partner', 'Partner'),
         ('admin', 'Admin'),
     ]
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     location = models.CharField(max_length=255, blank=True)
     latitude = models.FloatField(null=True, blank=True)
@@ -105,6 +111,7 @@ class Booking(models.Model):
     service = models.ForeignKey(PartnerService, on_delete=models.SET_NULL, null=True)
     service_category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    customer_gender = models.CharField(max_length=10, blank=True)
     address = models.CharField(max_length=500)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
@@ -114,10 +121,13 @@ class Booking(models.Model):
     scheduled_date = models.DateField()
     scheduled_time = models.TimeField()
     duration_minutes = models.IntegerField(default=120)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     commission_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     partner_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    ai_quote_data = models.JSONField(null=True, blank=True)
+    ai_match_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)

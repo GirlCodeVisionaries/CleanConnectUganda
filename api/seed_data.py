@@ -216,6 +216,7 @@ def seed_sample_bookings():
             defaults={
                 'email': 'aisha@example.com',
                 'role': 'customer',
+                'gender': 'female',
                 'phone': '+256 701 234 567',
                 'location': 'Nakawa, Kampala',
             }

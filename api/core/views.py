@@ -21,11 +21,12 @@ from .serializers import (
     BookingSerializer, BookingCreateSerializer,
     PaymentSerializer, PaymentCreateSerializer,
     ReviewSerializer, AIQuoteRequestSerializer, AIQuoteInputSerializer,
+    AIAutoAssignInputSerializer,
     ChatInputSerializer, ChatMessageSerializer,
 )
 from .ai_engine import (
     generate_instant_quote, smart_match, forecast_demand,
-    ai_chat_respond, compute_trust_score
+    ai_chat_respond, compute_trust_score, ai_auto_assign
 )
 
 User = get_user_model()
@@ -184,6 +185,9 @@ def bookings_list(request):
     if serializer.is_valid():
         booking = serializer.save(customer=request.user)
 
+        if not booking.customer_gender:
+            booking.customer_gender = request.user.gender or ''
+
         commission_rate = Decimal(str(booking.partner.commission_rate)) / Decimal('100')
         booking.commission_amount = booking.total_price * commission_rate
         booking.partner_payout = booking.total_price - booking.commission_amount
@@ -337,6 +341,27 @@ def ai_match(request):
             'location': data['location'],
             'service_type': data['service_type'],
         })
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ai_auto_assign_view(request):
+    serializer = AIAutoAssignInputSerializer(data=request.data)
+    if serializer.is_valid():
+        data = serializer.validated_data
+        gender = data.get('gender', '') or request.user.gender or ''
+        result = ai_auto_assign(
+            location=data['location'],
+            service_type=data['service_type'],
+            num_rooms=data['num_rooms'],
+            num_bathrooms=data['num_bathrooms'],
+            urgency=data.get('urgency', 'standard'),
+            latitude=data.get('latitude'),
+            longitude=data.get('longitude'),
+            gender=gender,
+        )
+        return Response(result)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

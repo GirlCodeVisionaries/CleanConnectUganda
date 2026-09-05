@@ -13,7 +13,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'phone', 'role', 'location']
+        fields = ['id', 'username', 'email', 'password', 'phone', 'gender', 'role', 'location']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
@@ -27,7 +27,7 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'role', 'location', 'latitude', 'longitude', 'profile_image']
+        fields = ['id', 'username', 'email', 'phone', 'gender', 'role', 'location', 'latitude', 'longitude', 'profile_image']
         read_only_fields = ['id']
 
 
@@ -98,20 +98,21 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ['id', 'booking_ref', 'customer', 'customer_name', 'partner', 'partner_name',
                   'partner_rating', 'service', 'service_name', 'service_category',
-                  'status', 'address', 'num_rooms', 'num_bathrooms', 'special_requests',
+                  'status', 'customer_gender', 'address', 'num_rooms', 'num_bathrooms', 'special_requests',
                   'scheduled_date', 'scheduled_time', 'duration_minutes',
-                  'total_price', 'commission_amount', 'partner_payout',
-                  'ai_quote_data', 'created_at', 'completed_at']
+                  'base_price', 'discount_percent', 'discount_amount', 'total_price',
+                  'commission_amount', 'partner_payout',
+                  'ai_match_data', 'created_at', 'completed_at']
         read_only_fields = ['booking_ref', 'commission_amount', 'partner_payout', 'created_at']
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = ['partner', 'service', 'service_category', 'address', 'latitude', 'longitude',
+        fields = ['partner', 'service', 'service_category', 'customer_gender', 'address', 'latitude', 'longitude',
                   'num_rooms', 'num_bathrooms', 'special_requests',
                   'scheduled_date', 'scheduled_time', 'duration_minutes',
-                  'total_price', 'ai_quote_data']
+                  'base_price', 'discount_percent', 'discount_amount', 'total_price', 'ai_match_data']
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -155,6 +156,18 @@ class AIQuoteInputSerializer(serializers.Serializer):
     urgency = serializers.ChoiceField(choices=['standard', 'urgent', 'scheduled'], default='standard')
     latitude = serializers.FloatField(required=False, allow_null=True)
     longitude = serializers.FloatField(required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=['male', 'female', 'other', ''], default='', required=False)
+
+
+class AIAutoAssignInputSerializer(serializers.Serializer):
+    location = serializers.CharField(max_length=255)
+    service_type = serializers.CharField(max_length=100)
+    num_rooms = serializers.IntegerField(default=1, min_value=1)
+    num_bathrooms = serializers.IntegerField(default=1, min_value=0)
+    urgency = serializers.ChoiceField(choices=['standard', 'urgent', 'scheduled'], default='standard')
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=['male', 'female', 'other', ''], default='', required=False)
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):

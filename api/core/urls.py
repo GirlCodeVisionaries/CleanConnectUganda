@@ -23,6 +23,7 @@ urlpatterns = [
 
     path('ai/quote/', views.ai_quote, name='ai_quote'),
     path('ai/match/', views.ai_match, name='ai_match'),
+    path('ai/assign/', views.ai_auto_assign_view, name='ai_auto_assign'),
     path('ai/forecast/', views.ai_forecast, name='ai_forecast'),
     path('ai/chat/', views.ai_chat, name='ai_chat'),
     path('ai/trust-score/<int:partner_pk>/', views.ai_trust_score, name='ai_trust_score'),

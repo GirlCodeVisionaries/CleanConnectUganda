@@ -437,3 +437,140 @@ def compute_trust_score(partner_id):
         score += 5
 
     return max(0, min(100, round(score, 1)))
+
+
+FEMALE_DISCOUNT_PERCENT = 5
+
+
+def calculate_gender_discount(base_price, gender):
+    if gender == 'female':
+        discount_amount = round(base_price * FEMALE_DISCOUNT_PERCENT / 100 / 1000) * 1000
+        discount_amount = max(discount_amount, 1000)
+        return {
+            'discount_percent': FEMALE_DISCOUNT_PERCENT,
+            'discount_amount': int(discount_amount),
+            'final_price': int(base_price) - int(discount_amount),
+            'message': f'Women get {FEMALE_DISCOUNT_PERCENT}% off!',
+        }
+    return {
+        'discount_percent': 0,
+        'discount_amount': 0,
+        'final_price': int(base_price),
+        'message': '',
+    }
+
+
+def ai_auto_assign(location, service_type, num_rooms, num_bathrooms, urgency='standard',
+                   latitude=None, longitude=None, gender=''):
+    pricing = BASE_PRICES.get(service_type, BASE_PRICES['home_deep_clean'])
+    base = pricing['base']
+    room_cost = pricing['per_room'] * max(num_rooms - 1, 0)
+    bathroom_cost = pricing['per_bathroom'] * num_bathrooms
+    subtotal = base + room_cost + bathroom_cost
+
+    urgency_mult = URGENCY_MULTIPLIERS.get(urgency, 1.0)
+    subtotal *= urgency_mult
+
+    forecast = _get_demand_adjustment(location, service_type)
+    subtotal *= float(forecast)
+
+    noise = random.uniform(0.97, 1.03)
+    platform_price = round(subtotal * noise / 1000) * 1000
+    platform_price = max(platform_price, 25000)
+
+    discount_info = calculate_gender_discount(platform_price, gender)
+
+    partners = _find_matching_partners(location, service_type, num_rooms, latitude, longitude)
+
+    scored = []
+    for p in partners:
+        score = 0
+        score += float(p.avg_rating) * 20
+        score += min(p.total_bookings * 0.5, 25)
+
+        distance = None
+        if latitude and longitude and p.user.latitude and p.user.longitude:
+            distance = _haversine_km(latitude, longitude, p.user.latitude, p.user.longitude)
+            if distance <= p.coverage_radius_km:
+                score += max(0, 30 - distance * 3)
+            else:
+                score -= 20
+        else:
+            score += 10
+
+        recent = Booking.objects.filter(partner=p, status='completed').count()
+        cancelled = Booking.objects.filter(partner=p, status='cancelled').count()
+        if recent > 0:
+            completion_rate = recent / (recent + cancelled)
+            score += completion_rate * 15
+
+        avail = PartnerAvailability.objects.filter(
+            partner=p, is_available=True
+        ).exists()
+        if avail:
+            score += 10
+
+        scored.append({
+            'partner': p,
+            'score': score,
+            'distance_km': round(distance, 1) if distance is not None else None,
+        })
+
+    scored.sort(key=lambda x: -x['score'])
+
+    if not scored:
+        return {
+            'assigned': False,
+            'message': 'No partners available for this request right now.',
+        }
+
+    best = scored[0]
+    partner = best['partner']
+
+    partner_services = partner.services.filter(is_available=True)
+    ps = partner_services.first()
+    estimated_duration = _estimate_duration(service_type, num_rooms, num_bathrooms)
+
+    next_slot = _next_available_slot(partner)
+
+    return {
+        'assigned': True,
+        'platform_price': int(platform_price),
+        'platform_price_display': f"UGX {int(platform_price):,}",
+        'discount': discount_info,
+        'final_price': discount_info['final_price'],
+        'final_price_display': f"UGX {discount_info['final_price']:,}",
+        'service_type': service_type,
+        'location': location,
+        'num_rooms': num_rooms,
+        'num_bathrooms': num_bathrooms,
+        'urgency': urgency,
+        'estimated_duration': estimated_duration,
+        'partner_id': partner.id,
+        'partner_rating': float(partner.avg_rating),
+        'partner_rating_display': f"{partner.avg_rating:.1f}",
+        'partner_distance_km': best['distance_km'],
+        'ai_match_score': round(best['score'], 1),
+        'ai_match_reason': _build_match_reason(best),
+        'next_available': next_slot,
+        'partners_considered': len(scored),
+        'assurance': {
+            're_clean': True,
+            'refund_policy': 'Full refund if not satisfied within 24 hours',
+            'replacement': 'Free replacement partner if needed',
+        },
+    }
+
+
+def _build_match_reason(match):
+    reasons = []
+    if match['partner'].avg_rating >= 4.7:
+        reasons.append('top-rated')
+    if match['distance_km'] is not None and match['distance_km'] <= 5:
+        reasons.append('nearby')
+    if match['partner'].total_bookings >= 100:
+        reasons.append('highly experienced')
+    if not reasons:
+        reasons.append('best overall fit')
+    return 'AI selected this partner because they are ' + ', '.join(reasons)
+
