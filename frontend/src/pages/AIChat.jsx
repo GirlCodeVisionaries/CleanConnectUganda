@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Send, Sparkles, Bot, User, Loader2, Lightbulb } from 'lucide-react';
+import { Send, Bot, User, Loader2, Lightbulb } from 'lucide-react';
+import { LogoMark } from '../components/Logo';
 
 export default function AIChat() {
   const { user } = useAuth();
@@ -55,7 +56,7 @@ export default function AIChat() {
   return (
     <div className="chat-page">
       <div className="chat-header">
-        <Sparkles size={24} className="brand-icon" />
+        <LogoMark size={24} className="brand-icon" />
         <div>
           <h2>CleanConnect AI Assistant</h2>
           <p>Your smart booking helper — ask anything</p>
