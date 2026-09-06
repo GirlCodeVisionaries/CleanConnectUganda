@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
-import Logo from '../components/Logo';
+import { Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
   const { register } = useAuth();
@@ -37,7 +36,7 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <Logo size={30} />
+          <Sparkles size={32} className="brand-icon" />
           <h1>Create your account</h1>
           <p>Join CleanConnect Uganda today</p>
         </div>
