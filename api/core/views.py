@@ -221,10 +221,6 @@ def booking_detail(request, pk):
             data['payment'] = PaymentSerializer(Payment.objects.get(booking=booking)).data
         except Payment.DoesNotExist:
             data['payment'] = None
-        try:
-            data['review'] = ReviewSerializer(Review.objects.get(booking=booking)).data
-        except Review.DoesNotExist:
-            data['review'] = None
         return Response(data)
 
     new_status = request.data.get('status')
