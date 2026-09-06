@@ -111,7 +111,7 @@ export default function Order() {
       setBookingData(bookingRes.data);
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Order failed. Please try again.');
+      setError(err.response?.data?.detail || 'Booking failed. Please try again.');
     }
     setOrderLoading(false);
   };
@@ -123,7 +123,7 @@ export default function Order() {
       <div className="booking-success">
         <div className="success-card">
           <CheckCircle size={64} className="text-accent" />
-          <h1>Order Confirmed!</h1>
+          <h1>Booking Confirmed!</h1>
           <p className="booking-ref">Reference: <strong>{bookingData.booking_ref}</strong></p>
           <div className="success-details">
             <p><strong>{bookingData.partner_name}</strong></p>
@@ -140,7 +140,7 @@ export default function Order() {
             <span>Protected by CleanConnect Assurance Guarantee</span>
           </div>
           <div className="success-actions">
-            <button className="btn btn-primary" onClick={() => navigate('/bookings')}>View My Orders</button>
+            <button className="btn btn-primary" onClick={() => navigate('/bookings')}>View My Bookings</button>
             <button className="btn btn-outline" onClick={() => navigate('/')}>Back to Home</button>
           </div>
         </div>
@@ -348,7 +348,7 @@ export default function Order() {
       {step === 3 && aiResult && (
         <div className="order-step-content">
           <div className="order-step-header">
-            <h1>Confirm Your Order</h1>
+            <h1>Confirm Your Booking</h1>
             <p>Fill in the details below and your cleaner will be ready to go</p>
           </div>
 
@@ -444,7 +444,7 @@ export default function Order() {
 
             <div className="booking-summary">
               <div className="summary-card">
-                <h2>Order Summary</h2>
+                <h2>Booking Summary</h2>
                 <div className="summary-partner">
                   <h3>CleanConnect Assigned Cleaner</h3>
                   <div className="summary-rating">
@@ -492,7 +492,7 @@ export default function Order() {
                 <button className="btn btn-primary btn-full btn-lg" onClick={handlePlaceOrder} disabled={orderLoading}>
                   {orderLoading
                     ? <><Loader2 size={18} className="spin" /> Processing...</>
-                    : <><CreditCard size={18} /> Place Order & Pay</>
+                    : <><CreditCard size={18} /> Place Booking & Pay</>
                   }
                 </button>
               </div>

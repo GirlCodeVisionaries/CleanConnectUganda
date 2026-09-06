@@ -1,8 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, User, LogOut, LayoutDashboard, Wallet, ShieldCheck } from 'lucide-react';
+import { Sparkles, Menu, X, User, LogOut, LayoutDashboard, Wallet, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import Logo from './Logo';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -18,7 +17,8 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-inner">
         <Link to="/" className="navbar-brand">
-          <Logo size={24} />
+          <Sparkles size={24} className="brand-icon" />
+          <span>CleanConnect</span>
         </Link>
 
         <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
@@ -26,7 +26,7 @@ export default function Navbar() {
         </button>
 
         <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-          <Link to="/order" onClick={() => setMenuOpen(false)}>Order a Service</Link>
+          <Link to="/order" onClick={() => setMenuOpen(false)}>Book a Service</Link>
           <Link to="/ai-chat" onClick={() => setMenuOpen(false)}>AI Assistant</Link>
           {user ? (
             <>

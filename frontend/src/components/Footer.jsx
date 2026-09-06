@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin } from 'lucide-react';
-import Logo from './Logo';
+import { Sparkles, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <Logo size={22} text="CleanConnect Uganda" />
+          <Sparkles size={20} className="brand-icon" />
+          <span>CleanConnect Uganda</span>
           <p>The on-demand marketplace for trusted cleaning services</p>
         </div>
         <div className="footer-links">

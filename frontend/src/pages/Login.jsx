@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
-import Logo from '../components/Logo';
+import { Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -29,7 +28,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <Logo size={30} />
+          <Sparkles size={32} className="brand-icon" />
           <h1>Welcome back</h1>
           <p>Sign in to your CleanConnect account</p>
         </div>
@@ -72,13 +71,6 @@ export default function Login() {
         <p className="auth-footer">
           Don't have an account? <Link to="/register">Sign up</Link>
         </p>
-
-        <div className="demo-accounts">
-          <p><strong>Demo accounts:</strong></p>
-          <p>Customer: <code>aisha_demo / customer123</code></p>
-          <p>Partner: <code>sparklehome / partner123</code></p>
-          <p>Admin: <code>admin / admin123</code></p>
-        </div>
       </div>
     </div>
   );

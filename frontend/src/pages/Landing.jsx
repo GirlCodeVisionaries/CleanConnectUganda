@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Shield, Clock, CreditCard, Sparkles, Star, MapPin, ArrowRight, CheckCircle, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import heroImg from '../assets/towfiqu-barbhuiya-ho-p7qLBewk-unsplash.jpg';
 
 export default function Landing() {
   const { user } = useAuth();
@@ -17,7 +18,8 @@ export default function Landing() {
   return (
     <div className="landing">
       <section className="hero">
-        <div className="hero-content">
+        <div className="hero-inner">
+          <div className="hero-content">
           <h1>Clean spaces, <span className="text-accent">zero stress.</span></h1>
           <p className="hero-sub">
             Instant quotes. Verified companies and cleaners. Secure mobile payment.
@@ -56,6 +58,15 @@ export default function Landing() {
             <span><CheckCircle size={16} /> Verified partners</span>
             <span><Shield size={16} /> Service guarantee</span>
             <span><CreditCard size={16} /> Secure MoMo payment</span>
+          </div>
+          </div>
+
+          <div className="hero-media">
+            <img
+              src={heroImg}
+              alt="Professional cleaning with CleanConnect"
+              className="hero-image"
+            />
           </div>
         </div>
       </section>
