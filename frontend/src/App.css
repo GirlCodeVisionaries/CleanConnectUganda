@@ -161,6 +161,22 @@ a:hover { color: var(--primary-dark); }
 }
 .navbar-brand:hover { color: var(--text); }
 .brand-icon { color: var(--primary); }
+
+/* Logo lockup (icon + wordmark) */
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+.app-logo .brand-icon { flex-shrink: 0; }
+.app-logo-text {
+  font-weight: 800;
+  font-size: 1.05em;
+  letter-spacing: -0.015em;
+  color: inherit;
+  white-space: nowrap;
+}
 .navbar-links {
   display: flex;
   align-items: center;
