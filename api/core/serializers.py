@@ -93,6 +93,7 @@ class BookingSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.username', read_only=True)
     service_name = serializers.CharField(source='service.name', read_only=True, allow_null=True)
     partner_rating = serializers.CharField(source='partner.avg_rating_display', read_only=True)
+    review = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -102,8 +103,15 @@ class BookingSerializer(serializers.ModelSerializer):
                   'scheduled_date', 'scheduled_time', 'duration_minutes',
                   'base_price', 'discount_percent', 'discount_amount', 'total_price',
                   'commission_amount', 'partner_payout',
-                  'ai_match_data', 'created_at', 'completed_at']
+                  'ai_match_data', 'created_at', 'completed_at', 'review']
         read_only_fields = ['booking_ref', 'commission_amount', 'partner_payout', 'created_at']
+
+    def get_review(self, obj):
+        try:
+            review = obj.review
+            return ReviewSerializer(review).data
+        except Review.DoesNotExist:
+            return None
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
