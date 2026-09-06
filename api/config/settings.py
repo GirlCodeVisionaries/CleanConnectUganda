@@ -9,6 +9,9 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# Gemini API Key for AI chatbot (set as environment variable in production)
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

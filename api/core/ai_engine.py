@@ -4,6 +4,9 @@ import hashlib
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from google import genai
+from google.genai import types
+from django.conf import settings
 from django.db.models import Avg, Count
 from django.utils import timezone
 
@@ -11,6 +14,9 @@ from .models import (
     Partner, PartnerService, PartnerAvailability,
     Booking, DemandForecast, ChatMessage
 )
+
+# Initialize Gemini
+genai_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
 BASE_PRICES = {
@@ -248,121 +254,97 @@ def forecast_demand(location, service_type, days=14):
 
 
 def ai_chat_respond(session_id, user_message):
+    """
+    AI chatbot powered by Google Gemini - can answer any question naturally
+    """
+    # Save user message
     ChatMessage.objects.create(session_id=session_id, role='user', content=user_message)
-
-    msg_lower = user_message.lower().strip()
-
-    response = _generate_chat_response(msg_lower, user_message)
-
-    ChatMessage.objects.create(session_id=session_id, role='assistant', content=response)
-
-    history = ChatMessage.objects.filter(session_id=session_id).order_by('created_at')[:20]
-    return {
-        'reply': response,
-        'session_id': session_id,
-        'suggestions': _get_suggestions(msg_lower),
-        'history': [{'role': m.role, 'content': m.content} for m in history],
-    }
-
-
-def _generate_chat_response(msg_lower, original_message):
-    if any(w in msg_lower for w in ['hello', 'hi', 'hey', 'webale', 'muzungu']):
-        return ("Webale nnyo! Welcome to CleanConnect Uganda! I'm your AI booking assistant.\n\n"
-                "I can help you with:\n"
-                "- Getting instant quotes for cleaning services\n"
-                "- Booking a verified partner\n"
-                "- Checking availability\n"
-                "- Understanding our service guarantee\n\n"
-                "What can I help you with today?")
-
-    if any(w in msg_lower for w in ['price', 'cost', 'how much', 'quote', 'charge']):
-        return ("Our pricing depends on the service type, number of rooms, and urgency.\n\n"
-                "Here are our starting prices:\n"
-                "- Home Deep Clean: from UGX 50,000\n"
-                "- Regular Clean: from UGX 35,000\n"
-                "- Office Cleaning: from UGX 70,000\n"
-                "- Move-in/Move-out: from UGX 75,000\n\n"
-                "Tell me your location and number of rooms, and I'll get you an instant quote!")
-
-    if any(w in msg_lower for w in ['book', 'schedule', 'appointment', 'reserve']):
-        return ("Great! To book a cleaning service, I need a few details:\n\n"
-                "1. Your location (neighbourhood in Kampala or other city)\n"
-                "2. Service type (home deep clean, regular clean, office, etc.)\n"
-                "3. Number of rooms and bathrooms\n"
-                "4. Preferred date and time\n\n"
-                "Once you share these, I'll find the best verified partners near you!")
-
-    if any(w in msg_lower for w in ['guarantee', 'assurance', 'refund', 're-clean']):
-        return ("Every CleanConnect booking is covered by our Assurance Guarantee:\n\n"
-                "- Re-clean: If you're not satisfied, we'll send a partner to re-clean for free\n"
-                "- Refund: Full refund if the issue can't be resolved within 24 hours\n"
-                "- Replacement: We'll send a different verified partner at no extra cost\n\n"
-                "Your satisfaction is our priority!")
-
-    if any(w in msg_lower for w in ['payment', 'pay', 'momo', 'mobile money', 'mtn', 'airtel']):
-        return ("We support secure mobile payments:\n\n"
-                "- MTN Mobile Money (MoMo)\n"
-                "- Airtel Money\n"
-                "- Bank Card (Visa/Mastercard)\n\n"
-                "Payment is held securely until the job is completed. You only confirm payment "
-                "when you're satisfied with the service!")
-
-    if any(w in msg_lower for w in ['partner', 'cleaner', 'company', 'verified']):
-        return ("All CleanConnect partners go through a thorough verification process:\n\n"
-                "1. ID and background checks\n"
-                "2. Reference verification\n"
-                "3. Sample job review\n"
-                "4. Ongoing quality monitoring via ratings\n\n"
-                "We currently have verified partners across Kampala, Entebbe, Mukono, and Jinja. "
-                "Each partner has a public rating so you can choose with confidence!")
-
-    if any(w in msg_lower for w in ['available', 'when', 'time', 'today', 'tomorrow']):
-        return ("Our partners are available 7 days a week! Most partners operate between "
-                "7:00 AM and 7:00 PM.\n\n"
-                "For same-day bookings, I recommend booking before 2 PM to ensure availability. "
-                "For urgent same-day service, there may be a small urgency surcharge.\n\n"
-                "Would you like me to check availability for a specific date?")
-
-    if any(w in msg_lower for w in ['area', 'location', 'where', 'coverage', 'kampala']):
-        return ("We currently operate in:\n\n"
-                "- Kampala (all divisions: Central, Kawempe, Makindye, Nakawa, Rubaga)\n"
-                "- Entebbe\n"
-                "- Mukono\n"
-                "- Wakiso\n"
-                "- Jinja\n\n"
-                "We're expanding to Mbarara, Gulu, and Mbale soon! "
-                "Enter your location to see available partners near you.")
-
-    if any(w in msg_lower for w in ['cancel', 'reschedule', 'change']):
-        return ("You can cancel or reschedule your booking:\n\n"
-                "- Free cancellation up to 4 hours before the scheduled time\n"
-                "- Rescheduling is free at any time (subject to partner availability)\n"
-                "- Late cancellations may incur a small fee\n\n"
-                "To cancel or reschedule, go to your bookings page or tell me your booking reference.")
-
-    if any(w in msg_lower for w in ['thank', 'thanks', 'webale', 'asante']):
-        return ("You're welcome! If you need anything else, I'm here to help.\n\n"
-                "Remember: CleanConnect - Instant quotes. Verified partners. Guaranteed quality.\n"
-                "One tap away, anywhere in Uganda!")
-
-    return ("Thanks for your message! I'm the CleanConnect AI assistant.\n\n"
-            "I can help you with:\n"
-            "- Getting instant quotes\n"
-            "- Booking a cleaning service\n"
-            "- Checking partner availability\n"
-            "- Payment information\n"
-            "- Our service guarantee\n\n"
-            "Try asking: \"How much does a home deep clean cost in Nakawa?\" or "
-            "\"I want to book a cleaner for tomorrow\"")
+    
+    # Get conversation history for context
+    history = ChatMessage.objects.filter(session_id=session_id).order_by('created_at')[:10]
+    
+    # Build conversation context
+    conversation_context = "You are a helpful AI assistant for CleanConnect Uganda, a cleaning service marketplace. "
+    conversation_context += "You can answer ANY question - not just about cleaning services. "
+    conversation_context += "Be friendly, conversational, and helpful. Keep responses concise (2-4 sentences unless more detail is needed).\n\n"
+    
+    # Add conversation history
+    if history.exists():
+        conversation_context += "Previous conversation:\n"
+        for msg in history:
+            role = "User" if msg.role == 'user' else "Assistant"
+            conversation_context += f"{role}: {msg.content}\n"
+        conversation_context += "\n"
+    
+    # Add current message
+    conversation_context += f"User: {user_message}\nAssistant:"
+    
+    try:
+        # Generate response using Gemini with system instruction
+        response = genai_client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=user_message,
+            config=types.GenerateContentConfig(
+                system_instruction=conversation_context
+            )
+        )
+        reply = response.text.strip()
+        
+        # Save assistant response
+        ChatMessage.objects.create(session_id=session_id, role='assistant', content=reply)
+        
+        # Generate smart suggestions based on context
+        suggestions = _generate_smart_suggestions(user_message, reply)
+        
+        # Get updated history
+        updated_history = ChatMessage.objects.filter(session_id=session_id).order_by('created_at')[:20]
+        
+        return {
+            'reply': reply,
+            'session_id': session_id,
+            'suggestions': suggestions,
+            'history': [{'role': m.role, 'content': m.content} for m in updated_history],
+        }
+    except Exception as e:
+        # Fallback if Gemini fails
+        error_reply = "I'm having trouble connecting to my AI brain right now. Could you try again in a moment?"
+        ChatMessage.objects.create(session_id=session_id, role='assistant', content=error_reply)
+        
+        return {
+            'reply': error_reply,
+            'session_id': session_id,
+            'suggestions': ['Try again', 'Get a quote', 'Book a cleaner'],
+            'history': [{'role': m.role, 'content': m.content} for m in ChatMessage.objects.filter(session_id=session_id).order_by('created_at')[:20]],
+        }
 
 
-def _get_suggestions(msg_lower):
-    if any(w in msg_lower for w in ['price', 'cost', 'how much']):
-        return ['Book a cleaner', 'What areas do you cover?', 'How does the guarantee work?']
-    if any(w in msg_lower for w in ['book', 'schedule']):
+def _generate_smart_suggestions(user_message, assistant_reply):
+    """
+    Generate contextual suggestions based on the conversation
+    """
+    msg_lower = user_message.lower()
+    
+    # If asking about pricing/quotes
+    if any(w in msg_lower for w in ['price', 'cost', 'how much', 'quote']):
+        return ['Book a cleaner', 'What services do you offer?', 'How does the guarantee work?']
+    
+    # If asking about booking
+    if any(w in msg_lower for w in ['book', 'schedule', 'appointment']):
         return ['Home Deep Clean', 'Regular Clean', 'Office Cleaning']
-    if any(w in msg_lower for w in ['hello', 'hi', 'hey']):
+    
+    # If asking about services
+    if any(w in msg_lower for w in ['service', 'clean', 'offer']):
+        return ['Get a quote', 'Book a cleaner', 'What areas do you cover?']
+    
+    # If greeting
+    if any(w in msg_lower for w in ['hello', 'hi', 'hey', 'good']):
         return ['Get a quote', 'Book a cleaner', 'What services do you offer?']
+    
+    # If asking about guarantee/quality
+    if any(w in msg_lower for w in ['guarantee', 'quality', 'refund', 'satisfied']):
+        return ['Book a cleaner', 'How do I pay?', 'Who are your partners?']
+    
+    # Default suggestions
     return ['Get a quote', 'Book a cleaner', 'How does payment work?', 'What is the guarantee?']
 
 
