@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import CustomerRoute from './components/CustomerRoute';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -35,8 +36,8 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/order" element={<Order />} />
-              <Route path="/bookings" element={<MyBookings />} />
+              <Route path="/order" element={<CustomerRoute><Order /></CustomerRoute>} />
+              <Route path="/bookings" element={<CustomerRoute><MyBookings /></CustomerRoute>} />
               <Route path="/dashboard" element={<PartnerDashboard />} />
               <Route path="/partner/onboarding" element={<PartnerOnboarding />} />
               <Route path="/partner/earnings" element={<PartnerEarnings />} />

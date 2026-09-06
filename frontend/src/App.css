@@ -175,6 +175,11 @@ a:hover { color: var(--primary-dark); }
   gap: 4px;
 }
 .navbar-links a:hover { color: var(--primary); }
+/* Button-styled nav links keep their own colours (outranks .navbar-links a). */
+.navbar-links a.btn-primary,
+.navbar-links a.btn-primary:hover { color: #fff; }
+.navbar-links a.btn-outline,
+.navbar-links a.btn-outline:hover { color: var(--primary); }
 .mobile-menu-btn { display: none; background: none; border: none; cursor: pointer; color: var(--text); }
 
 /* Footer */
@@ -396,15 +401,17 @@ section h2 { font-size: 32px; font-weight: 700; text-align: center; margin-botto
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 64px);
-  padding: 24px;
+  padding: 40px 24px;
+  background: linear-gradient(160deg, #d1fae5 0%, #e0f2fe 55%, #dbeafe 100%);
 }
 .auth-card {
   background: white;
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 40px;
   max-width: 480px;
   width: 100%;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 40px -12px rgba(6, 95, 70, 0.18), 0 8px 16px -8px rgba(0, 0, 0, 0.08);
 }
 .auth-header { text-align: center; margin-bottom: 24px; }
 .auth-header h1 { font-size: 24px; margin: 12px 0 4px; }
@@ -571,6 +578,13 @@ section h2 { font-size: 32px; font-weight: 700; text-align: center; margin-botto
 }
 .payment-option input { display: none; }
 .payment-option.active { border-color: var(--primary); background: var(--primary-light); }
+.payment-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
 
 .summary-card {
   background: white;

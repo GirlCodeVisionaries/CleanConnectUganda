@@ -13,6 +13,10 @@ export default function Navbar() {
     navigate('/');
   };
 
+  const isStaff = !!user && (user.is_staff || user.is_superuser);
+  const isPartner = user?.role === 'partner';
+  const isCustomerView = !isStaff && !isPartner; // logged-out visitor or a customer
+
   return (
     <nav className="navbar">
       <div className="navbar-inner">
@@ -26,11 +30,13 @@ export default function Navbar() {
         </button>
 
         <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-          <Link to="/order" onClick={() => setMenuOpen(false)}>Book a Service</Link>
+          {isCustomerView && (
+            <Link to="/order" onClick={() => setMenuOpen(false)}>Book a Service</Link>
+          )}
           <Link to="/ai-chat" onClick={() => setMenuOpen(false)}>AI Assistant</Link>
           {user ? (
             <>
-              {user.role === 'partner' && (
+              {isPartner && (
                 <>
                   <Link to="/dashboard" onClick={() => setMenuOpen(false)}>
                     <LayoutDashboard size={16} /> Dashboard
@@ -40,12 +46,14 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-              {(user.is_staff || user.is_superuser) && (
+              {isStaff && (
                 <Link to="/admin" onClick={() => setMenuOpen(false)}>
                   <ShieldCheck size={16} /> Admin
                 </Link>
               )}
-              <Link to="/bookings" onClick={() => setMenuOpen(false)}>My Bookings</Link>
+              {isCustomerView && (
+                <Link to="/bookings" onClick={() => setMenuOpen(false)}>My Bookings</Link>
+              )}
               <button onClick={handleLogout} className="btn btn-outline btn-sm">
                 <LogOut size={16} /> Logout
               </button>

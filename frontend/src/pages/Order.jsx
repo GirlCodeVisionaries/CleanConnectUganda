@@ -7,6 +7,9 @@ import {
   ArrowRight, ArrowLeft, Calendar, CreditCard, Sparkles, Home, Briefcase,
   Truck, Package, Maximize, Droplet, Tag, Award, Bot
 } from 'lucide-react';
+import mtnLogo from '../assets/payments/mtn.svg';
+import airtelLogo from '../assets/payments/airtel.svg';
+import absaLogo from '../assets/payments/absa.svg';
 
 const SERVICE_OPTIONS = [
   { value: 'home_deep_clean', label: 'Home Deep Clean', icon: Home, desc: 'Thorough cleaning of your entire home', price: 'From UGX 50,000' },
@@ -417,14 +420,17 @@ export default function Order() {
                 <div className="payment-options">
                   <label className={`payment-option ${paymentMethod === 'mtn_momo' ? 'active' : ''}`}>
                     <input type="radio" value="mtn_momo" checked={paymentMethod === 'mtn_momo'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <img src={mtnLogo} alt="" className="payment-logo" />
                     <span>MTN Mobile Money</span>
                   </label>
                   <label className={`payment-option ${paymentMethod === 'airtel_money' ? 'active' : ''}`}>
                     <input type="radio" value="airtel_money" checked={paymentMethod === 'airtel_money'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <img src={airtelLogo} alt="" className="payment-logo" />
                     <span>Airtel Money</span>
                   </label>
                   <label className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}>
                     <input type="radio" value="card" checked={paymentMethod === 'card'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <img src={absaLogo} alt="" className="payment-logo" />
                     <span>Bank Card</span>
                   </label>
                 </div>
