@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Nx
+.nx/cache
+.nx/workspace-data
+
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+venv/
+.venv/
+
+# Django media uploads
+media/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

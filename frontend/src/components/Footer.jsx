@@ -26,8 +26,8 @@ export default function Footer() {
           </div>
           <div>
             <h4>Contact</h4>
-            <p><Mail size={14} /> hello@cleanconnect.ug</p>
-            <p><Phone size={14} /> +256 7XX XXX XXX</p>
+            <p><Mail size={14} /> <a href="mailto:hello@cleanconnect.ug">hello@cleanconnect.ug</a></p>
+            <p><Phone size={14} /> <a href="tel:+256752640121">+256 752 640 121</a></p>
             <p><MapPin size={14} /> Kampala, Uganda</p>
           </div>
         </div>

@@ -18,8 +18,8 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await register(form);
-      navigate('/');
+      const newUser = await register(form);
+      navigate(newUser.role === 'partner' ? '/partner/onboarding' : '/');
     } catch (err) {
       const data = err.response?.data;
       if (data) {

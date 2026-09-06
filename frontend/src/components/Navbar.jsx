@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Sparkles, Menu, X, User, LogOut, LayoutDashboard, Wallet, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -31,8 +31,18 @@ export default function Navbar() {
           {user ? (
             <>
               {user.role === 'partner' && (
-                <Link to="/dashboard" onClick={() => setMenuOpen(false)}>
-                  <LayoutDashboard size={16} /> Dashboard
+                <>
+                  <Link to="/dashboard" onClick={() => setMenuOpen(false)}>
+                    <LayoutDashboard size={16} /> Dashboard
+                  </Link>
+                  <Link to="/partner/earnings" onClick={() => setMenuOpen(false)}>
+                    <Wallet size={16} /> Earnings
+                  </Link>
+                </>
+              )}
+              {(user.is_staff || user.is_superuser) && (
+                <Link to="/admin" onClick={() => setMenuOpen(false)}>
+                  <ShieldCheck size={16} /> Admin
                 </Link>
               )}
               <Link to="/bookings" onClick={() => setMenuOpen(false)}>My Bookings</Link>

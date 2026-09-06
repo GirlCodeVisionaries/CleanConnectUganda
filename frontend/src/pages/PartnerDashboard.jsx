@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { partnersAPI, bookingsAPI, aiAPI } from '../services/api';
-import { BarChart3, Users, DollarSign, Calendar, Star, TrendingUp, Loader2, MapPin, Clock } from 'lucide-react';
+import { partnersAPI, bookingsAPI, aiAPI, partnerPortalAPI } from '../services/api';
+import {
+  BarChart3, Users, DollarSign, Calendar, Star, TrendingUp, Loader2, MapPin, Clock,
+  Wallet, ShieldCheck, ArrowRight,
+} from 'lucide-react';
 
 export default function PartnerDashboard() {
   const { user } = useAuth();
@@ -9,42 +13,80 @@ export default function PartnerDashboard() {
   const [bookings, setBookings] = useState([]);
   const [forecast, setForecast] = useState(null);
   const [stats, setStats] = useState({});
+  const [earningsSummary, setEarningsSummary] = useState(null);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
     try {
-      const partnerRes = await partnersAPI.list();
-      const myPartner = partnerRes.data.find(p => p.user?.username === user?.username || p.id);
-      if (myPartner) {
-        const detailRes = await partnersAPI.detail(myPartner.id);
-        setPartner(detailRes.data);
-
-        const bookingsRes = await bookingsAPI.list();
-        setBookings(bookingsRes.data);
-
-        try {
-          const forecastRes = await aiAPI.forecast({
-            location: user?.location || 'Kampala',
-            service_type: 'home_deep_clean',
-            days: 7,
-          });
-          setForecast(forecastRes.data);
-        } catch (e) {
-          console.error('Forecast error:', e);
+      let myPartner = null;
+      try {
+        const meRes = await partnerPortalAPI.me();
+        myPartner = meRes.data;
+      } catch (e) {
+        if (e.response?.status === 404 || e.response?.status === 403) {
+          setNeedsOnboarding(true);
+          setLoading(false);
+          return;
         }
-
-        setStats({
-          totalBookings: detailRes.data.total_bookings,
-          avgRating: detailRes.data.avg_rating,
-          totalEarnings: detailRes.data.total_earnings,
-          trustScore: detailRes.data.trust_score,
-        });
       }
+
+      if (!myPartner) {
+        // Legacy fallback for older accounts.
+        const partnerRes = await partnersAPI.list();
+        const guess = partnerRes.data.find(p => p.user?.username === user?.username);
+        if (guess) {
+          const detailRes = await partnersAPI.detail(guess.id);
+          myPartner = detailRes.data;
+        }
+      }
+
+      if (!myPartner) {
+        setNeedsOnboarding(true);
+        setLoading(false);
+        return;
+      }
+      setPartner(myPartner);
+
+      const bookingsRes = await bookingsAPI.list();
+      setBookings(bookingsRes.data);
+
+      let trustScore = myPartner.trust_score;
+      if (trustScore === undefined) {
+        try {
+          const ts = await aiAPI.trustScore(myPartner.id);
+          trustScore = ts.data.trust_score;
+        } catch (e) { /* non-critical */ }
+      }
+
+      try {
+        const eRes = await partnerPortalAPI.earnings();
+        setEarningsSummary(eRes.data.summary);
+      } catch (e) { /* non-critical */ }
+
+      try {
+        const forecastRes = await aiAPI.forecast({
+          location: user?.location || 'Kampala',
+          service_type: 'home_deep_clean',
+          days: 7,
+        });
+        setForecast(forecastRes.data);
+      } catch (e) {
+        console.error('Forecast error:', e);
+      }
+
+      setStats({
+        totalBookings: myPartner.total_bookings,
+        avgRating: myPartner.avg_rating,
+        totalEarnings: myPartner.total_earnings,
+        trustScore,
+      });
     } catch (err) {
       console.error(err);
     }
@@ -55,15 +97,19 @@ export default function PartnerDashboard() {
     return <div className="loading-page"><Loader2 size={32} className="spin" /></div>;
   }
 
-  if (!partner) {
+  if (needsOnboarding || !partner) {
     return (
       <div className="empty-state">
         <Users size={48} />
-        <h2>Partner profile not found</h2>
-        <p>Contact support to set up your partner account</p>
+        <h2>Set up your partner account</h2>
+        <p>Add your business details and upload your documents to start receiving bookings.</p>
+        <Link to="/partner/onboarding" className="btn btn-primary">Start Onboarding</Link>
       </div>
     );
   }
+
+  const onboardingIncomplete =
+    partner.verification_status !== 'verified' || partner.onboarding_complete?.all === false;
 
   return (
     <div className="dashboard-page">
@@ -77,8 +123,23 @@ export default function PartnerDashboard() {
             {partner.verification_status}
           </span>
           {partner.is_featured && <span className="badge featured">Featured</span>}
+          <Link to="/partner/earnings" className="btn btn-outline btn-sm">
+            <Wallet size={14} /> Earnings
+          </Link>
         </div>
       </div>
+
+      {onboardingIncomplete && (
+        <Link to="/partner/onboarding" className="onboarding-banner">
+          <ShieldCheck size={18} />
+          <span>
+            {partner.verification_status === 'verified'
+              ? 'Finish setting up your profile to get the most out of CleanConnect.'
+              : 'Your account is not verified yet. Complete onboarding and document review to start receiving bookings.'}
+          </span>
+          <ArrowRight size={16} />
+        </Link>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">

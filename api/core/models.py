@@ -224,3 +224,140 @@ class DemandForecast(models.Model):
     class Meta:
         unique_together = ['location', 'service_type', 'date']
         verbose_name_plural = 'Demand forecasts'
+
+
+# ---------------------------------------------------------------------------
+# Partner portal: onboarding documents, earnings ledger, payouts
+# ---------------------------------------------------------------------------
+
+# Documents a partner must have APPROVED before they can be verified.
+# Keyed by whether the partner is an individual or a registered company.
+REQUIRED_DOCUMENTS_INDIVIDUAL = ['national_id']
+REQUIRED_DOCUMENTS_COMPANY = ['national_id', 'business_registration']
+
+
+def required_document_types(is_individual):
+    return REQUIRED_DOCUMENTS_INDIVIDUAL if is_individual else REQUIRED_DOCUMENTS_COMPANY
+
+
+def partner_document_upload_path(instance, filename):
+    return f"partner_documents/partner_{instance.partner_id}/{instance.doc_type}/{filename}"
+
+
+class PartnerDocument(models.Model):
+    DOC_TYPE_CHOICES = [
+        ('national_id', 'National ID'),
+        ('business_registration', 'Business Registration Certificate'),
+        ('tax_certificate', 'Tax Certificate (TIN)'),
+        ('proof_of_address', 'Proof of Address'),
+        ('insurance', 'Insurance Certificate'),
+        ('certification', 'Cleaning Certification'),
+        ('other', 'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, related_name='documents')
+    doc_type = models.CharField(max_length=30, choices=DOC_TYPE_CHOICES)
+    file = models.FileField(upload_to=partner_document_upload_path)
+    original_name = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    review_notes = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_documents'
+    )
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.partner.business_name} - {self.get_doc_type_display()} ({self.status})"
+
+
+class Payout(models.Model):
+    METHOD_CHOICES = [
+        ('mtn_momo', 'MTN Mobile Money'),
+        ('airtel_money', 'Airtel Money'),
+        ('bank', 'Bank Transfer'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+    ]
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, related_name='payouts')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, default='mtn_momo')
+    destination = models.CharField(max_length=100)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending')
+    reference = models.CharField(max_length=100, blank=True)
+    failure_reason = models.CharField(max_length=255, blank=True)
+    provider_response = models.JSONField(null=True, blank=True)
+    requested_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requested_payouts'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Payout {self.amount} UGX -> {self.partner.business_name} ({self.status})"
+
+
+class PartnerEarning(models.Model):
+    """One ledger line per paid booking: what the customer paid, what the
+    platform kept as commission, and what the partner is owed."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),      # payment received, job not completed yet
+        ('available', 'Available'),  # job completed, eligible for payout
+        ('paid', 'Paid Out'),        # settled through a completed payout
+    ]
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, related_name='earnings')
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='earning')
+    payment = models.ForeignKey(
+        Payment, on_delete=models.SET_NULL, null=True, blank=True, related_name='earnings'
+    )
+    gross_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    payout = models.ForeignKey(
+        Payout, on_delete=models.SET_NULL, null=True, blank=True, related_name='earnings'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.partner.business_name} - net {self.net_amount} UGX ({self.status})"
+
+
+class AdminActionLog(models.Model):
+    """Audit trail for platform-admin write actions taken through the admin API."""
+    actor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name='admin_actions'
+    )
+    action = models.CharField(max_length=60)          # e.g. 'partner.verify'
+    target_type = models.CharField(max_length=40, blank=True)   # e.g. 'partner'
+    target_id = models.CharField(max_length=40, blank=True)
+    summary = models.CharField(max_length=255, blank=True)
+    detail = models.JSONField(null=True, blank=True)  # {'before': ..., 'after': ...}
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        who = self.actor.username if self.actor else 'system'
+        return f"{who} {self.action} {self.target_type}#{self.target_id}"

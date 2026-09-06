@@ -14,8 +14,9 @@ from django.utils import timezone as tz
 from django.contrib.auth import get_user_model
 from core.models import (
     ServiceCategory, Partner, PartnerService, PartnerAvailability,
-    Booking, Review
+    Booking, Review, Payment
 )
+from core import services
 
 User = get_user_model()
 
@@ -268,6 +269,33 @@ def seed_sample_bookings():
     print("Created sample bookings and reviews")
 
 
+def seed_partner_earnings():
+    """Backfill the earnings ledger for completed bookings so the partner
+    portal has data to show. Idempotent."""
+    count = 0
+    for booking in Booking.objects.filter(status='completed'):
+        if not booking.commission_amount or not booking.partner_payout:
+            rate = Decimal(str(booking.partner.commission_rate)) / Decimal('100')
+            booking.commission_amount = (booking.total_price * rate).quantize(Decimal('0.01'))
+            booking.partner_payout = booking.total_price - booking.commission_amount
+            booking.save(update_fields=['commission_amount', 'partner_payout'])
+
+        payment = Payment.objects.filter(booking=booking).first()
+        if not payment:
+            payment = Payment.objects.create(
+                booking=booking,
+                method='mtn_momo',
+                amount=booking.total_price,
+                status='completed',
+                transaction_id=f"TXN-SEED-{booking.id:06d}",
+                completed_at=tz.now(),
+            )
+        services.record_earning_for_payment(payment)
+        services.mark_booking_earning_available(booking)
+        count += 1
+    print(f"Backfilled earnings for {count} completed bookings")
+
+
 def seed_admin_user():
     admin, created = User.objects.get_or_create(
         username='admin',
@@ -289,5 +317,6 @@ if __name__ == '__main__':
     seed_service_categories()
     seed_partners()
     seed_sample_bookings()
+    seed_partner_earnings()
     seed_admin_user()
     print("Database seeding complete!")

@@ -13,6 +13,17 @@ export function AuthProvider({ children }) {
       setUser(JSON.parse(savedUser));
     }
     setLoading(false);
+
+    // Refresh from the server so fields added since last login (e.g. is_staff)
+    // are picked up without forcing a re-login.
+    if (savedUser && localStorage.getItem('token')) {
+      authAPI.profile()
+        .then((res) => {
+          setUser(res.data);
+          localStorage.setItem('user', JSON.stringify(res.data));
+        })
+        .catch(() => { /* keep the cached user if the refresh fails */ });
+    }
   }, []);
 
   const login = async (credentials) => {

@@ -42,6 +42,56 @@ export const bookingsAPI = {
   update: (id, data) => api.put(`/bookings/${id}/`, data),
 };
 
+export const adminAPI = {
+  overview: () => api.get('/admin/overview/'),
+
+  partners: (params) => api.get('/admin/partners/', { params }),
+  partner: (id) => api.get(`/admin/partners/${id}/`),
+  updatePartner: (id, data) => api.patch(`/admin/partners/${id}/`, data),
+  setPartnerVerification: (id, data) => api.post(`/admin/partners/${id}/verification/`, data),
+  payoutPartner: (id, data) => api.post(`/admin/partners/${id}/payout/`, data),
+
+  documents: (params) => api.get('/admin/documents/', { params }),
+  reviewDocument: (id, data) => api.post(`/admin/documents/${id}/review/`, data),
+
+  bookings: (params) => api.get('/admin/bookings/', { params }),
+  booking: (id) => api.get(`/admin/bookings/${id}/`),
+  setBookingStatus: (id, data) => api.post(`/admin/bookings/${id}/status/`, data),
+
+  payments: (params) => api.get('/admin/payments/', { params }),
+  refundPayment: (id) => api.post(`/admin/payments/${id}/refund/`),
+
+  payouts: (params) => api.get('/admin/payouts/', { params }),
+  retryPayout: (id) => api.post(`/admin/payouts/${id}/retry/`),
+
+  users: (params) => api.get('/admin/users/', { params }),
+  user: (id) => api.get(`/admin/users/${id}/`),
+  setUserActive: (id, data) => api.post(`/admin/users/${id}/active/`, data),
+  setUserRole: (id, data) => api.post(`/admin/users/${id}/role/`, data),
+
+  categories: () => api.get('/admin/categories/'),
+  createCategory: (data) => api.post('/admin/categories/', data),
+  updateCategory: (id, data) => api.patch(`/admin/categories/${id}/`, data),
+  disableCategory: (id) => api.delete(`/admin/categories/${id}/`),
+
+  activity: (params) => api.get('/admin/activity/', { params }),
+};
+
+export const partnerPortalAPI = {
+  me: () => api.get('/partners/me/'),
+  onboard: (data) => api.post('/partners/onboard/', data),
+  updateProfile: (data) => api.put('/partners/me/', data),
+  documents: () => api.get('/partners/me/documents/'),
+  uploadDocument: (formData) =>
+    api.post('/partners/me/documents/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteDocument: (id) => api.delete(`/partners/me/documents/${id}/`),
+  earnings: () => api.get('/partners/me/earnings/'),
+  payouts: () => api.get('/partners/me/payouts/'),
+  requestPayout: (data) => api.post('/partners/me/payouts/', data),
+};
+
 export const paymentsAPI = {
   create: (data) => api.post('/payments/', data),
 };
