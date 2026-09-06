@@ -35,6 +35,16 @@ export default function MyBookings() {
     setLoading(false);
   };
 
+  const confirmService = async (bookingId) => {
+    if (!window.confirm('Confirm that you received the service and are satisfied?')) return;
+    try {
+      await bookingsAPI.update(bookingId, { status: 'completed' });
+      loadBookings();
+    } catch (err) {
+      alert('Failed to confirm service');
+    }
+  };
+
   const submitReview = async () => {
     if (!reviewModal) return;
     try {
@@ -113,6 +123,11 @@ export default function MyBookings() {
                   </div>
                   <div className="booking-card-right">
                     <div className="booking-price">UGX {Number(b.total_price).toLocaleString()}</div>
+                    {(b.status === 'confirmed' || b.status === 'in_progress') && (
+                      <button className="btn btn-primary btn-sm" onClick={() => confirmService(b.id)}>
+                        <CheckCircle size={14} /> Confirm Service Received
+                      </button>
+                    )}
                     {b.status === 'completed' && !b.review && (
                       <button className="btn btn-outline btn-sm" onClick={() => setReviewModal(b)}>
                         <Star size={14} /> Leave Review
