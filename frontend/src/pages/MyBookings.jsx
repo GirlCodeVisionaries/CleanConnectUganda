@@ -49,7 +49,11 @@ export default function MyBookings() {
       setComment('');
       loadBookings();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to submit review');
+      const data = err.response?.data;
+      const msg = data?.error
+        || Object.values(data || {}).flat().join(', ')
+        || 'Failed to submit review';
+      alert(msg);
     }
   };
 
@@ -143,7 +147,7 @@ export default function MyBookings() {
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your experience..."
+                placeholder="Share your experience (optional)..."
                 rows={4}
               />
             </div>
