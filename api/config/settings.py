@@ -74,6 +74,21 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Max size (bytes) for a single partner-document upload.
+PARTNER_DOCUMENT_MAX_SIZE = 5 * 1024 * 1024
+PARTNER_DOCUMENT_ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp']
+
+# Pluggable providers. Swap these for real gateways (MTN MoMo, Flutterwave, etc.)
+# without touching call sites. See core/payments.py for the interface.
+PAYMENT_PROVIDER = 'core.payments.SimulatedPaymentProvider'
+PAYOUT_PROVIDER = 'core.payments.SimulatedDisbursementProvider'
+
+# Minimum accumulated balance (UGX) before a partner can request a payout.
+PAYOUT_MINIMUM_AMOUNT = 10000
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'

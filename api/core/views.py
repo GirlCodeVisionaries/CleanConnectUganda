@@ -1,19 +1,21 @@
-import uuid
 from decimal import Decimal
 
 from django.contrib.auth import authenticate, get_user_model
 from django.db.models import Avg
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
 from .models import (
     Partner, PartnerService, PartnerAvailability,
-    Booking, Payment, Review, ServiceCategory, AIQuoteRequest
+    Booking, Payment, Review, ServiceCategory, AIQuoteRequest,
+    PartnerDocument, PartnerEarning, Payout,
 )
+from .permissions import IsPartner
 from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, UserSerializer,
     ServiceCategorySerializer, PartnerSerializer, PartnerListSerializer,
@@ -23,7 +25,12 @@ from .serializers import (
     ReviewSerializer, AIQuoteRequestSerializer, AIQuoteInputSerializer,
     AIAutoAssignInputSerializer,
     ChatInputSerializer, ChatMessageSerializer,
+    PartnerOnboardingSerializer, PartnerMeSerializer,
+    PartnerDocumentSerializer, PartnerDocumentUploadSerializer,
+    PartnerEarningSerializer, PayoutSerializer, PayoutRequestSerializer,
 )
+from . import services
+from .payments import get_payment_provider
 from .ai_engine import (
     generate_instant_quote, smart_match, forecast_demand,
     ai_chat_respond, compute_trust_score, ai_auto_assign
@@ -229,6 +236,8 @@ def booking_detail(request, pk):
             booking.partner.total_earnings += booking.partner_payout
             booking.partner.save()
         booking.save()
+        if new_status == 'completed':
+            services.mark_booking_earning_available(booking)
 
     return Response(BookingSerializer(booking).data)
 
@@ -242,18 +251,28 @@ def payment_create(request):
         if request.user != booking.customer:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
 
+        provider_result = get_payment_provider().charge(
+            booking=booking,
+            method=serializer.validated_data['method'],
+            phone_number=serializer.validated_data.get('phone_number', ''),
+        )
+
         payment = Payment.objects.create(
             booking=booking,
             method=serializer.validated_data['method'],
             amount=booking.total_price,
             phone_number=serializer.validated_data.get('phone_number', ''),
-            status='completed',
-            transaction_id=f"TXN-{uuid.uuid4().hex[:12].upper()}",
-            completed_at=timezone.now(),
+            status=provider_result['status'],
+            transaction_id=provider_result.get('transaction_id', ''),
+            completed_at=timezone.now() if provider_result['status'] == 'completed' else None,
         )
 
-        booking.status = 'confirmed'
-        booking.save()
+        if payment.status == 'completed':
+            booking.status = 'confirmed'
+            booking.save()
+            # Record the split: customer paid gross, platform keeps commission,
+            # the remainder becomes a partner earning awaiting job completion.
+            services.record_earning_for_payment(payment)
 
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -430,3 +449,140 @@ def hello(request):
         'version': '1.0.0',
         'tagline': 'Instant quotes. Verified partners. Guaranteed quality.',
     })
+
+
+# ---------------------------------------------------------------------------
+# Partner portal
+# ---------------------------------------------------------------------------
+
+def _get_partner_or_none(user):
+    return Partner.objects.filter(user=user).select_related('user').first()
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def partner_onboard(request):
+    """Create or update the calling user's partner profile."""
+    existing = _get_partner_or_none(request.user)
+    serializer = PartnerOnboardingSerializer(
+        instance=existing, data=request.data, partial=bool(existing),
+        context={'request': request},
+    )
+    if serializer.is_valid():
+        partner = serializer.save()
+        return Response(
+            PartnerMeSerializer(partner, context={'request': request}).data,
+            status=status.HTTP_200_OK if existing else status.HTTP_201_CREATED,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsPartner])
+def partner_me(request):
+    partner = _get_partner_or_none(request.user)
+    if not partner:
+        return Response(
+            {'error': 'No partner profile yet. Complete onboarding first.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if request.method == 'GET':
+        return Response(PartnerMeSerializer(partner, context={'request': request}).data)
+
+    serializer = PartnerOnboardingSerializer(
+        instance=partner, data=request.data, partial=True, context={'request': request},
+    )
+    if serializer.is_valid():
+        serializer.save()
+        return Response(PartnerMeSerializer(partner, context={'request': request}).data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsPartner])
+@parser_classes([MultiPartParser, FormParser])
+def partner_me_documents(request):
+    partner = _get_partner_or_none(request.user)
+    if not partner:
+        return Response({'error': 'Complete onboarding first.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        docs = partner.documents.all()
+        return Response(PartnerDocumentSerializer(docs, many=True, context={'request': request}).data)
+
+    serializer = PartnerDocumentUploadSerializer(
+        data=request.data, context={'request': request, 'partner': partner},
+    )
+    if serializer.is_valid():
+        doc = serializer.save()
+        return Response(
+            PartnerDocumentSerializer(doc, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsPartner])
+def partner_me_document_detail(request, pk):
+    partner = _get_partner_or_none(request.user)
+    if not partner:
+        return Response({'error': 'Complete onboarding first.'}, status=status.HTTP_404_NOT_FOUND)
+
+    doc = partner.documents.filter(pk=pk).first()
+    if not doc:
+        return Response({'error': 'Document not found.'}, status=status.HTTP_404_NOT_FOUND)
+    if doc.status == 'approved':
+        return Response(
+            {'error': 'Approved documents cannot be removed. Contact support.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    doc.file.delete(save=False)
+    doc.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsPartner])
+def partner_me_earnings(request):
+    partner = _get_partner_or_none(request.user)
+    if not partner:
+        return Response({'error': 'Complete onboarding first.'}, status=status.HTTP_404_NOT_FOUND)
+
+    earnings = (
+        PartnerEarning.objects.filter(partner=partner)
+        .select_related('booking', 'booking__customer', 'booking__service')
+    )
+    return Response({
+        'summary': services.earnings_summary(partner),
+        'earnings': PartnerEarningSerializer(earnings, many=True).data,
+    })
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsPartner])
+def partner_me_payouts(request):
+    partner = _get_partner_or_none(request.user)
+    if not partner:
+        return Response({'error': 'Complete onboarding first.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        return Response({
+            'summary': services.earnings_summary(partner),
+            'payouts': PayoutSerializer(partner.payouts.all(), many=True).data,
+        })
+
+    serializer = PayoutRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        payout = services.request_payout(
+            partner,
+            method=serializer.validated_data['method'],
+            destination=serializer.validated_data['destination'],
+            requested_by=request.user,
+        )
+    except services.PayoutError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(PayoutSerializer(payout).data, status=status.HTTP_201_CREATED)
