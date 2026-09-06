@@ -6,96 +6,128 @@
   "fileMap": {
     "nonProjectFiles": [
       {
-        "file": "api/core/urls.py",
-        "hash": "17702868384674504185"
-      },
-      {
-        "file": "api/config/settings.py",
-        "hash": "16877592500080065790"
-      },
-      {
-        "file": "api/core/serializers.py",
-        "hash": "6420851987934865466"
-      },
-      {
-        "file": "api/core/views.py",
-        "hash": "6241862166621844569"
-      },
-      {
-        "file": "package.json",
-        "hash": "11084143833209771572"
-      },
-      {
-        "file": "api/core/migrations/__init__.py",
-        "hash": "3244421341483603138"
-      },
-      {
         "file": "api/core/tests.py",
-        "hash": "5331198378592631655"
+        "hash": "17837683764164184981"
       },
       {
-        "file": "package-lock.json",
-        "hash": "12945522944539387436"
+        "file": "api/seed_data.py",
+        "hash": "897994340655775993"
       },
       {
-        "file": "api/config/wsgi.py",
-        "hash": "2681239232700206198"
+        "file": "api/core/migrations/0001_initial.py",
+        "hash": "1269149245394458888"
+      },
+      {
+        "file": "api/core/__init__.py",
+        "hash": "3244421341483603138"
       },
       {
         "file": "api/core/apps.py",
         "hash": "333468620948232621"
       },
       {
-        "file": "api/config/urls.py",
-        "hash": "13858552179361670238"
-      },
-      {
-        "file": "api/core/admin.py",
-        "hash": "12230811601773875966"
-      },
-      {
-        "file": "api/manage.py",
-        "hash": "14585530104478503655"
-      },
-      {
-        "file": "api/config/asgi.py",
-        "hash": "13979306153515445267"
-      },
-      {
-        "file": "api/core/migrations/0001_initial.py",
-        "hash": "7542999626451475037"
-      },
-      {
-        "file": "api/core/models.py",
-        "hash": "8784616986681982631"
+        "file": "api/core/ai_engine.py",
+        "hash": "5948713863342907217"
       },
       {
         "file": "api/config/__init__.py",
         "hash": "3244421341483603138"
       },
       {
-        "file": "api/seed_data.py",
-        "hash": "15039429885994952733"
+        "file": "package-lock.json",
+        "hash": "990990960224301273"
       },
       {
-        "file": "nx.json",
-        "hash": "4613372190725536043"
+        "file": "api/core/urls.py",
+        "hash": "6514116148956563831"
+      },
+      {
+        "file": "api/core/migrations/0003_adminactionlog.py",
+        "hash": "16550411612117743300"
       },
       {
         "file": "api/.gitignore",
-        "hash": "17105677476819857149"
+        "hash": "16472381715704205365"
+      },
+      {
+        "file": "api/config/settings.py",
+        "hash": "6679077285587782267"
+      },
+      {
+        "file": "api/core/serializers.py",
+        "hash": "16443738096201193602"
+      },
+      {
+        "file": "api/config/asgi.py",
+        "hash": "13979306153515445267"
       },
       {
         "file": "api/requirements.txt",
         "hash": "8199453964265138683"
       },
       {
-        "file": "api/core/ai_engine.py",
-        "hash": "8268022886315917657"
+        "file": "api/config/wsgi.py",
+        "hash": "2681239232700206198"
       },
       {
-        "file": "api/core/__init__.py",
+        "file": "api/manage.py",
+        "hash": "14585530104478503655"
+      },
+      {
+        "file": "api/core/permissions.py",
+        "hash": "16689517328439779316"
+      },
+      {
+        "file": "api/core/admin.py",
+        "hash": "17376482237938667976"
+      },
+      {
+        "file": "api/core/models.py",
+        "hash": "6604703025741008758"
+      },
+      {
+        "file": "api/core/admin_views.py",
+        "hash": "6624794635019069393"
+      },
+      {
+        "file": "api/core/migrations/0002_payout_partnerearning_partnerdocument.py",
+        "hash": "17766210634804434379"
+      },
+      {
+        "file": "api/core/audit.py",
+        "hash": "3973581419577958112"
+      },
+      {
+        "file": "api/core/payments.py",
+        "hash": "17579565263338845612"
+      },
+      {
+        "file": "IMPLEMENTATION_SUMMARY.md",
+        "hash": "12649488746700640523"
+      },
+      {
+        "file": "api/core/migrations/__init__.py",
         "hash": "3244421341483603138"
+      },
+      {
+        "file": "api/config/urls.py",
+        "hash": "13904826310479184670"
+      },
+      {
+        "file": "api/core/services.py",
+        "hash": "16466036314775458753"
+      },
+      {
+        "file": "api/core/views.py",
+        "hash": "7021083684489055480"
+      },
+      {
+        "file": "package.json",
+        "hash": "2193741898130511111"
+      },
+      {
+        "file": "nx.json",
+        "hash": "4613372190725536043"
       }
     ],
     "projectFileMap": {
@@ -109,8 +141,12 @@
           "hash": "6961687154674094509"
         },
         {
+          "file": "frontend/package-lock.json",
+          "hash": "2890623202186995548"
+        },
+        {
           "file": "frontend/package.json",
-          "hash": "7642537963323983499",
+          "hash": "12371302663387800028",
           "deps": [
             "npm:@types/react",
             "npm:@types/react-dom",
@@ -127,19 +163,19 @@
         },
         {
           "file": "frontend/src/App.css",
-          "hash": "4476046254113251565"
+          "hash": "9752829761506066624"
         },
         {
           "file": "frontend/src/App.jsx",
-          "hash": "6507502897161224390"
+          "hash": "18115420843979657803"
         },
         {
           "file": "frontend/src/components/Footer.jsx",
-          "hash": "15902195183407731237"
+          "hash": "15637039955557972578"
         },
         {
           "file": "frontend/src/components/Navbar.jsx",
-          "hash": "13519182471808187576"
+          "hash": "13810693763021791652"
         },
         {
           "file": "frontend/src/components/StarRating.jsx",
@@ -147,7 +183,7 @@
         },
         {
           "file": "frontend/src/context/AuthContext.jsx",
-          "hash": "3455801842719112824"
+          "hash": "13367279710847707093"
         },
         {
           "file": "frontend/src/index.css",
@@ -179,23 +215,79 @@
         },
         {
           "file": "frontend/src/pages/Order.jsx",
-          "hash": "10329779398496494684"
+          "hash": "4717239903510841172"
         },
         {
           "file": "frontend/src/pages/PartnerDashboard.jsx",
-          "hash": "3789863736641382706"
+          "hash": "7337505962299628259"
+        },
+        {
+          "file": "frontend/src/pages/PartnerEarnings.jsx",
+          "hash": "17698399721945849740"
+        },
+        {
+          "file": "frontend/src/pages/PartnerOnboarding.jsx",
+          "hash": "5128459307824743318"
         },
         {
           "file": "frontend/src/pages/Register.jsx",
-          "hash": "6327632774657155448"
+          "hash": "10051357984304457060"
         },
         {
           "file": "frontend/src/pages/Search.jsx",
           "hash": "9235746348931558035"
         },
         {
+          "file": "frontend/src/pages/admin/AdminActivity.jsx",
+          "hash": "17878622498455910867"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminBookings.jsx",
+          "hash": "7951911218119411805"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminCategories.jsx",
+          "hash": "5985116341282523495"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminDashboard.jsx",
+          "hash": "2120279339048894449"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminDocuments.jsx",
+          "hash": "12531526651975676370"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminLayout.jsx",
+          "hash": "9058427811447738976"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminPartnerDetail.jsx",
+          "hash": "3618576804477359900"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminPartners.jsx",
+          "hash": "16561784877761600982"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminPayments.jsx",
+          "hash": "15787264256681988492"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminPayouts.jsx",
+          "hash": "14585849559848300409"
+        },
+        {
+          "file": "frontend/src/pages/admin/AdminUsers.jsx",
+          "hash": "5972281712246113399"
+        },
+        {
+          "file": "frontend/src/pages/admin/common.jsx",
+          "hash": "566800256515838254"
+        },
+        {
           "file": "frontend/src/services/api.js",
-          "hash": "16180249137523492867"
+          "hash": "7741229337723767864"
         },
         {
           "file": "frontend/vite.config.js",
